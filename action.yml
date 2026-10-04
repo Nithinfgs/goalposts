@@ -37,9 +37,11 @@ runs:
         if [ -n "$GP_BASE" ]; then args+=(--base "$GP_BASE")
         elif [ -n "$GP_PR_BASE" ]; then args+=(--base "origin/$GP_PR_BASE"); fi
         [ -n "$GP_IGNORE" ] && args+=(--ignore "$GP_IGNORE")
-        [ -n "$GP_VERIFY" ] && args+=(--verify "$GP_VERIFY")
         bin="$GITHUB_ACTION_PATH/bin/goalposts.js"
         # Annotations first (never fails), then the markdown summary, then the gating run.
         node "$bin" "${args[@]}" --fail-on never --format github || true
         node "$bin" "${args[@]}" --fail-on never --format markdown >> "$GITHUB_STEP_SUMMARY" || true
-        node "$bin" "${args[@]}" --compact --no-color
+        # Only the gating run executes the (possibly slow) verify command.
+        final=("${args[@]}" --compact --no-color)
+        [ -n "$GP_VERIFY" ] && final+=(--verify "$GP_VERIFY")
+        node "$bin" "${final[@]}"
