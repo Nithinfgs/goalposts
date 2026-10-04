@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -168,4 +169,28 @@ test('cli: demo runs end to end', async () => {
   const r = await cli(['demo', '--no-color']);
   assert.equal(r.code, 0);
   for (const id of ['GP002', 'GP004', 'GP005', 'GP030', 'GP031', 'GP040', 'GP100']) assert.match(r.out, new RegExp(id));
+});
+
+test('cli: --staged only looks at the index', async () => {
+  const s = scenario({ 'a.test.js': "it('a', () => {});\n", 'b.test.js': "it('b', () => {});\n" }, { 'a.test.js': "it.skip('a', () => {});\n", 'b.test.js': "it.skip('b', () => {});\n" });
+  try {
+    execFileSync('git', ['add', 'a.test.js'], { cwd: s.dir });
+    const r = await cli(['-C', s.dir, '--staged', '--format', 'json']);
+    const files = JSON.parse(r.out).findings.map((/** @type {{ file: string }} */ f) => f.file);
+    assert.deepEqual(files, ['a.test.js']);
+    assert.equal(r.code, 1);
+  } finally {
+    s.cleanup();
+  }
+});
+
+test('cli: clean change exits 0 and says so', async () => {
+  const s = scenario({ 'a.js': 'export const a = 1;\n' }, { 'a.js': 'export const a = 2;\n' });
+  try {
+    const r = await cli(['-C', s.dir, '--base', 'main', '--no-color']);
+    assert.equal(r.code, 0);
+    assert.match(r.out, /No weakened tests or gates/);
+  } finally {
+    s.cleanup();
+  }
 });
