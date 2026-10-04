@@ -1,0 +1,11 @@
+name: Bug report
+description: Crash, wrong output or bad exit code
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes: { label: What happened, description: Command, output and expected behaviour }
+    validations: { required: true }
+  - type: input
+    id: env
+    attributes: { label: "goalposts / node / git / OS versions" }

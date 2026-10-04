@@ -1,0 +1,45 @@
+name: goalposts
+description: Detect tests, checks and CI gates that were weakened to make a diff pass.
+author: Nithinfgs
+branding:
+  icon: shield
+  color: gray-dark
+inputs:
+  base:
+    description: Base ref to compare against. Defaults to origin/<PR base branch>, or the repository default branch.
+    required: false
+    default: ''
+  fail-on:
+    description: Fail the job at this severity or above (high, medium, low, never).
+    required: false
+    default: high
+  verify:
+    description: Optional test command. Runs it on the change and again with the original test files restored.
+    required: false
+    default: ''
+  ignore:
+    description: Comma-separated rule IDs to skip.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Run goalposts
+      shell: bash
+      env:
+        GP_BASE: ${{ inputs.base }}
+        GP_FAIL_ON: ${{ inputs.fail-on }}
+        GP_VERIFY: ${{ inputs.verify }}
+        GP_IGNORE: ${{ inputs.ignore }}
+        GP_PR_BASE: ${{ github.base_ref }}
+      run: |
+        args=(--fail-on "$GP_FAIL_ON")
+        if [ -n "$GP_BASE" ]; then args+=(--base "$GP_BASE")
+        elif [ -n "$GP_PR_BASE" ]; then args+=(--base "origin/$GP_PR_BASE"); fi
+        [ -n "$GP_IGNORE" ] && args+=(--ignore "$GP_IGNORE")
+        [ -n "$GP_VERIFY" ] && args+=(--verify "$GP_VERIFY")
+        bin="$GITHUB_ACTION_PATH/bin/goalposts.js"
+        # Annotations first (never fails), then the markdown summary, then the gating run.
+        node "$bin" "${args[@]}" --fail-on never --format github || true
+        node "$bin" "${args[@]}" --fail-on never --format markdown >> "$GITHUB_STEP_SUMMARY" || true
+        node "$bin" "${args[@]}" --compact --no-color

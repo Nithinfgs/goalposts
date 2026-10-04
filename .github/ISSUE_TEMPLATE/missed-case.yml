@@ -1,0 +1,17 @@
+name: Missed case
+description: A test or gate was weakened and goalposts did not notice
+labels: [missed-detection]
+body:
+  - type: textarea
+    id: diff
+    attributes:
+      label: The diff that should have been flagged
+      description: Minimal diff (remove anything private).
+      render: diff
+    validations: { required: true }
+  - type: input
+    id: stack
+    attributes: { label: Language / test framework, placeholder: "Python / pytest" }
+  - type: textarea
+    id: why
+    attributes: { label: Where did you see this? (agent, tool, human) }
