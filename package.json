@@ -9,7 +9,7 @@
   "files": [
     "bin",
     "src",
-    "docs/rules.md",
+    "docs",
     "action.yml",
     "LICENSE"
   ],
