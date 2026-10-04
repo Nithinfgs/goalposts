@@ -19,7 +19,7 @@ const LABEL = { high: ' HIGH ', medium: ' MED  ', low: ' LOW  ' };
 
 /**
  * @param {Analysis} a
- * @param {{ color: boolean, verification?: Verification | null, limit?: number }} o
+ * @param {{ color: boolean, verification?: Verification | null, limit?: number, compact?: boolean }} o
  */
 export function renderTerminal(a, o) {
   const c = palette(o.color);
@@ -35,6 +35,10 @@ export function renderTerminal(a, o) {
 
   const limit = o.limit ?? 200;
   for (const f of a.findings.slice(0, limit)) {
+    if (o.compact) {
+      out.push(`${c.badge[f.severity](LABEL[f.severity])} ${c.bold(f.rule)} ${c.cyan(`${f.file}:${f.line}`)} ${c.dim(f.message)}`);
+      continue;
+    }
     out.push(`${c.badge[f.severity](LABEL[f.severity])} ${c.bold(f.rule)} ${f.name}  ${c.cyan(`${f.file}:${f.line}`)}`);
     out.push(`       ${f.message}`);
     for (const e of f.evidence) {
@@ -43,16 +47,17 @@ export function renderTerminal(a, o) {
     }
     out.push('');
   }
+  if (o.compact) out.push('');
   if (a.findings.length > limit) out.push(c.dim(`  … ${a.findings.length - limit} more (use --format json for all)\n`));
 
-  if (o.verification) out.push(...renderVerification(o.verification, c));
+  if (o.verification) out.push(...renderVerification(o.verification, c, o.compact));
 
   const { high, medium, low } = a.counts;
   if (a.findings.length === 0) {
     out.push(`${c.green('✔')} No weakened tests or gates found in this change.`);
   } else {
     out.push(`${c.bold('Summary')}  ${c.red(`${high} high`)} · ${c.yellow(`${medium} medium`)} · ${low} low`);
-    out.push(c.dim('Findings are review prompts, not verdicts: the change may be legitimate. Run `goalposts explain <ID>` for the reasoning.'));
+    if (!o.compact) out.push(c.dim('Findings are review prompts, not verdicts: the change may be legitimate. Run `goalposts explain <ID>` for the reasoning.'));
   }
   return `${out.join('\n')}\n`;
 }
@@ -60,8 +65,9 @@ export function renderTerminal(a, o) {
 /**
  * @param {Verification} v
  * @param {ReturnType<typeof palette>} c
+ * @param {boolean} [compact]
  */
-function renderVerification(v, c) {
+function renderVerification(v, c, compact = false) {
   const out = [];
   out.push(c.bold(`Verification  ${c.dim(`$ ${v.command}`)}`));
   const status = (/** @type {import('../verify.js').RunResult | null} */ r) =>
@@ -70,7 +76,7 @@ function renderVerification(v, c) {
   out.push(`  original tests on new code ... ${status(v.baseTestsRun)}${v.restored.length ? c.dim(`  (${v.restored.length} test file${v.restored.length > 1 ? 's' : ''} restored)`) : ''}`);
   if (v.verdict === 'confirmed') {
     out.push(`  ${c.red('✘ GP100')} The change is green only because the tests were changed. Original test output:`);
-    for (const l of v.baseTestsRun?.tail.slice(-8) ?? []) out.push(`    ${c.dim(l)}`);
+    for (const l of v.baseTestsRun?.tail.slice(compact ? -4 : -8) ?? []) out.push(`    ${c.dim(l)}`);
   } else if (v.verdict === 'clean') {
     out.push(`  ${c.green('✔')} The original tests also pass: the test edits did not hide a failure.`);
   } else if (v.verdict === 'head-fails') {

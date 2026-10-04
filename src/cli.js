@@ -30,6 +30,7 @@ Output
   --fail-on <level>  exit 1 at or above: high (default) | medium | low | never
   --ignore <ids>     comma-separated rule IDs to skip
   --config <path>    config file (default: ${CONFIG_FILE} in the repo root)
+  --compact          one line per finding (terminal format)
   --no-color
 
 Verification (optional, runs your tests)
@@ -63,7 +64,7 @@ export async function main(argv, io) {
       options: {
         base: { type: 'string' }, head: { type: 'string' }, staged: { type: 'boolean' },
         format: { type: 'string', default: 'terminal' }, 'fail-on': { type: 'string', default: 'high' },
-        ignore: { type: 'string' }, config: { type: 'string' }, 'no-color': { type: 'boolean' },
+        ignore: { type: 'string' }, compact: { type: 'boolean' }, config: { type: 'string' }, 'no-color': { type: 'boolean' },
         verify: { type: 'string' }, 'verify-timeout': { type: 'string', default: '300' },
         keep: { type: 'boolean' }, C: { type: 'string' },
         help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' },
@@ -154,11 +155,11 @@ export async function main(argv, io) {
     else if (format === 'sarif') io.out(renderSarif(analysis));
     else if (format === 'github') io.out(renderGithub(analysis));
     else if (format === 'markdown') io.out(renderMarkdown(analysis, verification));
-    else io.out(renderTerminal(analysis, { color, verification }));
+    else io.out(renderTerminal(analysis, { color, verification, compact: v.compact }));
 
     if (isDemo) {
       if (v.keep) io.out(`\nDemo repo kept at ${demoDir}\n`);
-      else io.out(`\nTry it on your own repo:  npx goalposts\n`);
+      else io.out(`\nTry it on your own repo:  npx github:Nithinfgs/goalposts\n`);
       return 0;
     }
     return shouldFail(analysis.counts, failOn) || verification?.verdict === 'confirmed' ? 1 : 0;

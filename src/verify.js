@@ -41,7 +41,7 @@ function run(command, cwd, timeoutSec) {
   const out = `${r.stdout ?? ''}${r.stderr ?? ''}`.split('\n').map((l) => l.trimEnd()).filter(Boolean);
   const timedOut = r.error !== undefined && /** @type {NodeJS.ErrnoException} */ (r.error).code === 'ETIMEDOUT';
   const failing = out.filter((l) => /^\s*(✖|×|not ok|FAIL(ED)?\b|--- FAIL)/.test(l) && !/^\s*✖ failing tests:?$/.test(l));
-  return { command, exitCode: r.status, timedOut, tail: failing.length ? [...new Set(failing)].slice(0, 8) : out.slice(-14) };
+  return { command, exitCode: r.status, timedOut, tail: failing.length ? [...new Set(failing.map((l) => l.replace(/\s*\(\d+(\.\d+)?ms\)\s*$/, '')))].slice(0, 8) : out.slice(-14) };
 }
 
 /**
