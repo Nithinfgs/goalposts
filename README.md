@@ -141,7 +141,7 @@ flowchart LR
 - **Diff-only.** A brand-new test that mocks away the code under test leaves no trace of "weakening" in a diff. `--verify` catches the case where *old* tests exist; nothing catches a test that was never written.
 - **Heuristic hardcoding detection** (`GP040`) looks for distinctive literals (strings of 5+ characters, 4+ digit numbers, 2-decimal floats) that appear in both new source lines and test assertions. It will miss obfuscated variants and may flag legitimate constants.
 - **Calibration:** on the last 10 commits of ripgrep, flask and express it reported 0 high and 0 medium findings; larger windows with real test refactors report more. Method and numbers: [docs/calibration.md](docs/calibration.md). Tune with `.goalposts.json`.
-- Tested on macOS and Linux CI. Windows is untested; `--verify` runs your command through the platform shell.
+- Developed and run locally on macOS; CI runs Linux and macOS on Node 20, 22 and 24. Windows is untested; `--verify` runs your command through the platform shell.
 
 ## Configuration
 
